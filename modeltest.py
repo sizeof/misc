@@ -2,7 +2,7 @@ import datetime, uuid, hashlib, random, string
 
 gen_uuid    = lambda: uuid.uuid4().bytes
 pretty_hex  = lambda b: str(uuid.UUID(bytes=b))
-sha1        = lambda s: hashlib.sha1(s).digest()
+sha1        = lambda s: hashlib.sha1(s).hexdigest()
 
 class User(object):
     def __init__(self, **kw):
@@ -62,6 +62,9 @@ class User(object):
         dic = dict(zip(fields, values))
         
         dic['_id'] = self.id
+        
+        # instead of doing binary for mongo.. for testing first
+        dic['_id'] = self.uuid
         
         return dic
     
