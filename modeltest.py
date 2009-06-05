@@ -24,6 +24,7 @@ class User(object):
         }
         self.services = {}
         self.notifications = []
+        self.status = 0
 
         self.id = gen_uuid()
         
@@ -56,7 +57,7 @@ class User(object):
     uuid = property(**uuid())
     
     def as_new_mongo_dict(self):
-        fields = ('name', 'username', 'password', 'email', 'options', 'services', 'notifications', 'created')
+        fields = ('name', 'username', 'password', 'email', 'options', 'services', 'notifications', 'created', 'status')
         values = map(self.__getattribute__, fields)
         
         dic = dict(zip(fields, values))
@@ -70,3 +71,5 @@ class User(object):
     
     def __repr__(self):
         return "<User('%s', '%s')>" % (self.username, self.name)
+        
+    
