@@ -1,3 +1,7 @@
+from pymongo.connection import Connection
+from pymongo.collection import Collection
+from pymongo.binary import Binary
+
 import datetime, uuid, hashlib, random, string
 
 gen_uuid    = lambda: uuid.uuid4().bytes
@@ -62,14 +66,37 @@ class User(object):
         
         dic = dict(zip(fields, values))
         
-        dic['_id'] = self.id
+        dic['_id'] = Binary(self.id, 2)
         
         # instead of doing binary for mongo.. for testing first
-        dic['_id'] = self.uuid
+        #dic['_id'] = self.uuid
         
         return dic
     
     def __repr__(self):
         return "<User('%s', '%s')>" % (self.username, self.name)
         
+def get_db():
+    from pymongo.connection import Connection
+    connection = Connection()
+    db = connection["testing"]
+    return db
+
+def dummy_user():
+    u = User(
+        name = 'John Doe',
+        email = 'john@doe.org',
+        username = ''.join(random.sample(string.ascii_lowercase, random.randint(6, 14))),
+        password = ''.join(random.sample(string.ascii_letters, random.randint(6, 20))),
+    )
+    u.created = datetime.datetime.utcnow() - datetime.timedelta(minutes=random.randint(0,100000))
+    u.options['private'] = random.choice([True, False])
+    u.options['new_window'] = random.choice([True, False])
+    return u
+
+def populate_dummy_users(coll, repeat=1000):
+    assert isinstance(coll, Collection), 'Must pass a valid pymongo Collection object'
     
+    dummies = [dummy_user().as_new_mongo_dict() for i in xrange(repeat)]
+    
+    results = coll.insert(dummies)
