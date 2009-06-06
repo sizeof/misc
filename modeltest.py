@@ -71,7 +71,7 @@ class User(object):
     
     def as_new_mongo_dict(self):
         values = map(self.__getattribute__, self.properties)
-        dic = dict(zip(fields, values))
+        dic = dict(zip(self.properties, values))
         dic['_id'] = Binary(self.id, 2)
         return dic
     
@@ -81,6 +81,7 @@ class User(object):
         values = map(son.get, u.properties)
         map(u.__setattr__, u.properties, values)
         u._password = son['password']
+        u.id = str(son['_id'])
         return u
     
     def __repr__(self):
