@@ -8,7 +8,16 @@ gen_uuid    = lambda: uuid.uuid4().bytes
 pretty_hex  = lambda b: str(uuid.UUID(bytes=b))
 sha1        = lambda s: hashlib.sha1(s).hexdigest()
 
+String      = lambda min=1, max=6: ''.join(random.sample(string.ascii_lowercase, random.randint(min, max)))
+PastDate    = lambda maxdays=180: datetime.datetime.utcnow() - datetime.timedelta(
+                days=random.randint(1, maxdays), minutes=random.randint(1,60*24))
+TrueFalse   = lambda: random.choice([True, False])
+
 class User(object):
+    
+    properties = ('name', 'username', 'password', 'email', 'options',
+                    'services', 'notifications', 'created', 'status')
+    
     def __init__(self, **kw):
         if kw:
             self._init_new(kw)
@@ -61,17 +70,17 @@ class User(object):
     uuid = property(**uuid())
     
     def as_new_mongo_dict(self):
-        fields = ('name', 'username', 'password', 'email', 'options', 'services', 'notifications', 'created', 'status')
-        values = map(self.__getattribute__, fields)
-        
+        values = map(self.__getattribute__, self.properties)
         dic = dict(zip(fields, values))
-        
         dic['_id'] = Binary(self.id, 2)
-        
-        # instead of doing binary for mongo.. for testing first
-        #dic['_id'] = self.uuid
-        
         return dic
+    
+    def from_mongo(cls, son):
+        u = cls()
+        values = map(son.get, u.properties)
+        map(u.__setattr__, u.properties, values)
+        u._password = son['password']
+        return u
     
     def __repr__(self):
         return "<User('%s', '%s')>" % (self.username, self.name)
@@ -82,21 +91,27 @@ def get_db():
     db = connection["testing"]
     return db
 
+def create_users_indexes(coll):
+    coll.ensure_index('username', 1)
+    coll.ensure_index('created', 1)
+    coll.ensure_index('email', 1)
+
 def dummy_user():
     u = User(
         name = 'John Doe',
         email = 'john@doe.org',
-        username = ''.join(random.sample(string.ascii_lowercase, random.randint(6, 14))),
-        password = ''.join(random.sample(string.ascii_letters, random.randint(6, 20))),
+        username = String(5, 12),
+        password = String(5, 12),
     )
-    u.created = datetime.datetime.utcnow() - datetime.timedelta(minutes=random.randint(0,100000))
-    u.options['private'] = random.choice([True, False])
-    u.options['new_window'] = random.choice([True, False])
+    u.created = PastDate()
+    u.options['private'] = TrueFalse()
+    u.options['new_window'] = TrueFalse()
     return u
 
 def populate_dummy_users(coll, repeat=1000):
     assert isinstance(coll, Collection), 'Must pass a valid pymongo Collection object'
-    
+
     dummies = [dummy_user().as_new_mongo_dict() for i in xrange(repeat)]
-    
+
     results = coll.insert(dummies)
+
