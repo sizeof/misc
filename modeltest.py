@@ -75,6 +75,7 @@ class User(object):
         dic['_id'] = Binary(self.id, 2)
         return dic
     
+    @staticmethod
     def from_mongo(son):
         u = User()
         values = map(son.get, u.properties)
