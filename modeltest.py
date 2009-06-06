@@ -75,8 +75,8 @@ class User(object):
         dic['_id'] = Binary(self.id, 2)
         return dic
     
-    def from_mongo(cls, son):
-        u = cls()
+    def from_mongo(son):
+        u = User()
         values = map(son.get, u.properties)
         map(u.__setattr__, u.properties, values)
         u._password = son['password']
